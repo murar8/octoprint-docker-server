@@ -26,9 +26,6 @@ services:
 
   octoprint:
     image: "octoprint/octoprint:minimal"
-    build:
-      dockerfile: Dockerfile.octoprint
-      context: .
     volumes:
       - "octoprint:/octoprint"
     labels:
