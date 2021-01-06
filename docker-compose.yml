@@ -48,8 +48,8 @@ services:
     image: linuxserver/code-server
     restart: always
     environment:
-      - PUID=0
-      - GUID=0
+      - PUID=1000
+      - GUID=1000
       - TZ=Europe/Rome
     volumes:
       - octoprint:/octoprint
