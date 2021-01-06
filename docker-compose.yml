@@ -2,39 +2,62 @@ version: "3.9"
 
 volumes:
   octoprint:
-  letsencrypt:
+  code-server:
 
 services:
-  traefik:
-    build:
-      dockerfile: Dockerfile.traefik
-      context: .
-    command:
-      - "--providers.docker"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--certificatesresolvers.acme-resolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.acme-resolver.acme.email=lnzmrr@gmail.com"
-      - "--certificatesresolvers.acme-resolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
+  watchtower:
+    image: containrrr/watchtower
+    restart: always
     volumes:
-      - "letsencrypt:/letsencrypt"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - --monitor-only
+
+  traefik:
+    image: traefik:2.3
+    restart: always
+    command:
+      - --providers.docker
+      - --providers.docker.exposedByDefault=false
+    ports:
+      - 80:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./.htdigest:/.htdigest
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.auth.digestauth.usersfile=/.htdigest
+      - traefik.http.middlewares.auth.digestauth.headerField=X-Auth-User
 
   octoprint:
-    image: "octoprint/octoprint:minimal"
+    image: octoprint/octoprint:minimal
+    restart: always
+    device_cgroup_rules:
+      - c 188:* rmw
     volumes:
-      - "octoprint:/octoprint"
+      - octoprint:/octoprint
+      - /dev:/dev
     labels:
-      - "traefik.http.routers.octoprint.rule=Host(`murar8.ddns.net`) && PathPrefix(`/octoprint`)"
-      - "traefik.http.routers.octoprint.tls=true"
-      - "traefik.http.routers.octoprint.tls.certresolver=acme-resolver"
-      - "traefik.http.routers.octoprint.middlewares=octoprint-customrequestheaders,octoprint-stripprefix"
-      - "traefik.http.middlewares.octoprint-stripprefix.stripprefix.prefixes=/octoprint"
-      - "traefik.http.middlewares.octoprint-customrequestheaders.headers.customrequestheaders.X-Script-Name=/octoprint"
-      - "traefik.http.middlewares.octoprint-customrequestheaders.headers.customrequestheaders.X-Forwarded-Proto=https"
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
+      - traefik.enable=true
+      - traefik.http.routers.octoprint.rule=PathPrefix(`/octoprint`)
+      - traefik.http.middlewares.octoprint-stripprefix.stripprefix.prefixes=/octoprint
+      - traefik.http.middlewares.octoprint-customrequestheaders.headers.customrequestheaders.X-Script-Name=/octoprint
+      - traefik.http.routers.octoprint.middlewares=auth,octoprint-customrequestheaders,octoprint-stripprefix
+
+  octoprint-config:
+    image: linuxserver/code-server
+    restart: always
+    environment:
+      - PUID=0
+      - GUID=0
+      - TZ=Europe/Rome
+    volumes:
+      - octoprint:/octoprint
+      - code-server:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.octoprint-config.rule=PathPrefix(`/octoprint/config`)
+      - traefik.http.middlewares.octoprint-config-stripprefix.stripprefix.prefixes=/octoprint/config
+      - traefik.http.middlewares.octoprint-config-redirect.redirectregex.regex=^(.+/octoprint/config)/?$$
+      - traefik.http.middlewares.octoprint-config-redirect.redirectregex.replacement=$$1/
+      - traefik.http.routers.octoprint-config.middlewares=auth,octoprint-config-redirect,octoprint-config-stripprefix

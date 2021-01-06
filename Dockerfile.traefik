@@ -1,7 +1,0 @@
-FROM traefik:2.3
-
-RUN mkdir /letsencrypt \
-    && touch /letsencrypt/acme.json \
-    && chmod 600 /letsencrypt/acme.json
-
-VOLUME [ "/letsencrypt" ]
