@@ -5,14 +5,6 @@ volumes:
   code-server:
 
 services:
-  watchtower:
-    image: containrrr/watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command:
-      - --monitor-only
-
   traefik:
     image: traefik:2.3
     restart: always
@@ -23,11 +15,10 @@ services:
       - 80:80
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./.htdigest:/.htdigest
+      - ./.htaccess:/.htaccess
     labels:
       - traefik.enable=true
-      - traefik.http.middlewares.auth.digestauth.usersfile=/.htdigest
-      - traefik.http.middlewares.auth.digestauth.headerField=X-Auth-User
+      - traefik.http.middlewares.auth.basicauth.usersfile=/.htaccess
 
   octoprint:
     build:
@@ -37,7 +28,7 @@ services:
     device_cgroup_rules:
       - c 188:* rmw
     volumes:
-      - ./data/octoprint:/octoprint
+      - octoprint:/octoprint
       - /dev:/dev
     labels:
       - traefik.enable=true
@@ -45,3 +36,21 @@ services:
       - traefik.http.middlewares.octoprint-stripprefix.stripprefix.prefixes=/octoprint
       - traefik.http.middlewares.octoprint-customrequestheaders.headers.customrequestheaders.X-Script-Name=/octoprint
       - traefik.http.routers.octoprint.middlewares=auth,octoprint-customrequestheaders,octoprint-stripprefix
+
+  octoprint-config:
+    image: linuxserver/code-server
+    restart: always
+    environment:
+      - PUID=1000
+      - GUID=1000
+      - TZ=Europe/Rome
+    volumes:
+      - octoprint:/octoprint
+      - code-server:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.octoprint-config.rule=PathPrefix(`/octoprint/config`)
+      - traefik.http.middlewares.octoprint-config-stripprefix.stripprefix.prefixes=/octoprint/config
+      - traefik.http.middlewares.octoprint-config-redirect.redirectregex.regex=^(.+/octoprint/config)/?$$
+      - traefik.http.middlewares.octoprint-config-redirect.redirectregex.replacement=$$1/
+      - traefik.http.routers.octoprint-config.middlewares=auth,octoprint-config-redirect,octoprint-config-stripprefix

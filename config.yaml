@@ -1,0 +1,3 @@
+accessControl:
+    trustBasicAuthentication: true
+    userFile: /octoprint/users.yaml
