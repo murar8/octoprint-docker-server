@@ -1,1 +1,4 @@
+data/octoprint/*
+!data/octoprint/config.yaml
+
 .htdigest

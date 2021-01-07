@@ -1,0 +1,24 @@
+accessControl:
+    trustBasicAuthentication: true
+    userFile: /octoprint/users.yaml
+api:
+    key: E65F458B8FC943EB941C5EF9B5E75E10
+plugins:
+    announcements:
+        _config_version: 1
+    discovery:
+        upnpUuid: 4d26cb06-6bdd-4fc8-afdc-ef3906f489cb
+    errortracking:
+        unique_id: 1080cab8-ce5f-4837-afb0-fde486889ca0
+    gcodeviewer:
+        _config_version: 1
+    softwareupdate:
+        _config_version: 9
+    tracking:
+        unique_id: bb7cb4f6-7ca4-44ce-a059-cf7ddbcea866
+    virtual_printer:
+        _config_version: 1
+printerProfiles:
+    default: _default
+server:
+    secretKey: cUkeDZGtX98fLlSjGsobUileGc0RfwVt
