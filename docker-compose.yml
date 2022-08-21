@@ -4,7 +4,7 @@ volumes:
 
 services:
   traefik:
-    image: traefik:2
+    image: traefik:2.8
     restart: always
     command:
       - --providers.docker
