@@ -1,12 +1,10 @@
-version: "3.9"
-
 volumes:
   octoprint:
   code-server:
 
 services:
   traefik:
-    image: traefik:2.3
+    image: traefik:2
     restart: always
     command:
       - --providers.docker
